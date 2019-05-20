@@ -24,5 +24,15 @@ func (mr *Master) schedule(phase jobPhase) {
 	//
 	// TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO
 	//
+	for i := 0; i < ntasks; i++ {
+		arg := &DoTaskArgs{
+			Phase:         phase,
+			TaskNumber:    i,
+			File:          mr.files[i],
+			NumOtherPhase: nios,
+		}
+		ok := call(worker, "Worker.DoTask", args, new(struct{}))
+	}
+
 	fmt.Printf("Schedule: %v phase done\n", phase)
 }
