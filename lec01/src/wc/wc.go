@@ -15,8 +15,8 @@ import (
 func mapF(document string, value string) (res []mapreduce.KeyValue) {
 	// TODO: you have to write this function
 	words := strings.FieldsFunc(value, contentSplit)
-	for _, word := range words {
-		res = append(res, mapreduce.KeyValue{word, ""})
+	for i, word := range words {
+		res = append(res, mapreduce.KeyValue{word, document + ":" + strconv.Itoa(i)})
 	}
 	return
 }
