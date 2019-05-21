@@ -24,14 +24,38 @@ func (mr *Master) schedule(phase jobPhase) {
 	//
 	// TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO
 	//
+	nworkers := len(mr.workers)
 	for i := 0; i < ntasks; i++ {
+		select {
+		case <-mr.registerChannel:
+			nworkers = len(mr.workers)
+		default:
+			if nworkers <= 0 {
+				select {
+				case <-mr.registerChannel:
+					nworkers = len(mr.workers)
+				}
+			}
+		}
+
 		arg := &DoTaskArgs{
+			JobName:       mr.jobName,
+			File:          mr.files[i],
 			Phase:         phase,
 			TaskNumber:    i,
-			File:          mr.files[i],
 			NumOtherPhase: nios,
 		}
-		ok := call(worker, "Worker.DoTask", args, new(struct{}))
+		worker := mr.workers[i%nworkers]
+		ok := call(worker, "Worker.DoTask", arg, new(struct{}))
+		if !ok {
+			fmt.Printf("Schedule: %d task to worker %s fail", i, worker)
+
+			//failure solution
+			copy(mr.workers[i%nworkers:], mr.workers[i%nworkers+1:])
+			nworkers--
+			mr.workers = mr.workers[0:nworkers]
+			i--
+		}
 	}
 
 	fmt.Printf("Schedule: %v phase done\n", phase)
